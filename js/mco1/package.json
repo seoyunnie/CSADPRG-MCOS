@@ -17,7 +17,7 @@
   "author": "Seoyun",
   "type": "module",
   "scripts": {
-    "start": "node ./src/index.js",
+    "start": "node ./index.js",
     "typecheck": "tsc -p ./jsconfig.json --noEmit"
   },
   "devDependencies": {

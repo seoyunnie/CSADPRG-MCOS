@@ -6,7 +6,7 @@
     "@tsconfig/strictest/tsconfig.json",
     "@tsconfig/node22/tsconfig.json"
   ],
-  "include": ["src/**/*"],
+  "include": ["index.js"],
 
   "compilerOptions": {
     /* Type Checking */
