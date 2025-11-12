@@ -61,6 +61,20 @@ const TRANSACTION_TITLES: [&str; 6] = [
     "Show Interest Amount",
 ];
 
+/// The fixed annual interest rate percentage.
+const ANNUAL_INTEREST_RATE: f64 = 0.05;
+
+/// Converts an amount from one currency to another.
+fn convert_currency(amount: f64, src: &&str, dest: &&str, rates: &HashMap<&str, f64>) -> f64 {
+    let src_php_amount = if *src == "PHP" { amount } else { amount * rates[src] };
+
+    if *dest == "PHP" {
+        src_php_amount
+    } else {
+        src_php_amount * rates[dest]
+    }
+}
+
 /// A simple user bank account.
 #[derive(PartialEq)]
 struct Account {
@@ -80,83 +94,106 @@ impl Account {
             currency: String::from("PHP"),
         }
     }
-}
 
-/// Converts an amount from one currency to another.
-fn convert_currency(amount: f64, src: &&str, dest: &&str, rates: &HashMap<&str, f64>) -> f64 {
-    let src_php_amount = if *src == "PHP" { amount } else { amount * rates[src] };
+    /// Deposits balance to the user's account.
+    ///
+    /// The user is prompted to input the currency and amount of balance to deposit.
+    fn deposit_balance(&mut self, rates: &HashMap<&str, f64>) {
+        println!("Current Balance: {}", self.balance);
 
-    if *dest == "PHP" {
-        src_php_amount
-    } else {
-        src_php_amount * rates[dest]
-    }
-}
+        let currency = prompt("Currency: ").to_uppercase();
 
-/// Deposits balance to a user's account.
-///
-/// The user is prompted to input the currency and amount of balance to deposit.
-fn deposit_balance(account: &mut Account, rates: &HashMap<&str, f64>) {
-    println!("Current Balance: {}", account.balance);
-
-    let currency = prompt("Currency: ").to_uppercase();
-
-    if !CURRENCIES_CODES.iter().any(|c| *c == currency) {
-        println!("No currency with this code exists!");
-
-        return;
-    }
-
-    println!();
-
-    if let Ok(amount) = prompt("Deposit Amount: ").parse::<f64>() {
-        account.balance += if currency == "PHP" {
-            amount
-        } else {
-            convert_currency(amount, &currency.as_str(), &"PHP", rates)
-        };
-
-        println!("Updated Balance: {}", account.balance);
-    } else {
-        println!("Deposit amount must be a floating point number!");
-    }
-}
-
-/// Withdraws balance from a user's account.
-///
-/// The user is prompted to input the currency and amount of balance to withdraw. If the amount is greater than the
-/// account's current balance, the transaction is cancelled.
-fn withdraw_balance(account: &mut Account, rates: &HashMap<&str, f64>) {
-    println!("Current Balance: {}", account.balance);
-
-    let currency = prompt("Currency: ").to_uppercase();
-
-    if !CURRENCIES_CODES.iter().any(|c| *c == currency) {
-        println!("No currency with this code exists!");
-
-        return;
-    }
-
-    println!();
-
-    if let Ok(mut amount) = prompt("Withdraw Amount: ").parse::<f64>() {
-        amount = if currency == "PHP" {
-            amount
-        } else {
-            convert_currency(amount, &currency.as_str(), &"PHP", rates)
-        };
-
-        if account.balance - amount < 0.0 {
-            println!("Withdraw amount must be less than the current balance!");
+        if !CURRENCIES_CODES.iter().any(|c| *c == currency) {
+            println!("No currency with this code exists!");
 
             return;
         }
 
-        account.balance -= amount;
+        println!();
 
-        println!("Updated Balance: {}", account.balance);
-    } else {
-        println!("Withdraw amount must be a floating point number!");
+        if let Ok(amount) = prompt("Deposit Amount: ").parse::<f64>() {
+            self.balance += if currency == "PHP" {
+                amount
+            } else {
+                convert_currency(amount, &currency.as_str(), &"PHP", rates)
+            };
+
+            println!("Updated Balance: {}", self.balance);
+        } else {
+            println!("Deposit amount must be a floating point number!");
+        }
+    }
+
+    /// Withdraws balance from the user's account.
+    ///
+    /// The user is prompted to input the currency and amount of balance to withdraw. If the amount is greater than the
+    /// account's current balance, the transaction is cancelled.
+    fn withdraw_balance(&mut self, rates: &HashMap<&str, f64>) {
+        println!("Current Balance: {}", self.balance);
+
+        let currency = prompt("Currency: ").to_uppercase();
+
+        if !CURRENCIES_CODES.iter().any(|c| *c == currency) {
+            println!("No currency with this code exists!");
+
+            return;
+        }
+
+        println!();
+
+        if let Ok(mut amount) = prompt("Withdraw Amount: ").parse::<f64>() {
+            amount = if currency == "PHP" {
+                amount
+            } else {
+                convert_currency(amount, &currency.as_str(), &"PHP", rates)
+            };
+
+            if self.balance - amount < 0.0 {
+                println!("Withdraw amount must be less than the current balance!");
+
+                return;
+            }
+
+            self.balance -= amount;
+
+            println!("Updated Balance: {}", self.balance);
+        } else {
+            println!("Withdraw amount must be a floating point number!");
+        }
+    }
+
+    /// Calculates and prints the daily increase to the account's balance from interest.
+    ///
+    /// The user is prompted to input the number of days to calculate for.
+    fn calculate_interest(&self) {
+        let mut balance = self.balance;
+
+        println!("Current Balance: {balance}");
+        println!("Currency: {}", self.currency);
+        println!("Interest Rate: {}%", (ANNUAL_INTEREST_RATE * 100.0) as i32);
+
+        println!();
+
+        if let Ok(day_cnt) = prompt("Total Number of Days: ").parse::<u32>() {
+            println!();
+
+            println!("Day | Interest | Balance |");
+
+            let daily_interest = (balance * (ANNUAL_INTEREST_RATE / 365.0) * 100.0).round() / 100.0;
+
+            for i in 1..=day_cnt {
+                balance += daily_interest;
+
+                println!(
+                    "{day:<3} | {interest:<8} | {balance:<7.2} |",
+                    day = i,
+                    interest = daily_interest,
+                    balance = balance
+                );
+            }
+        } else {
+            println!("Number must be a positive whole number (integer)!");
+        }
     }
 }
 
@@ -261,43 +298,6 @@ fn set_exchange_rate(rates: &mut HashMap<&str, f64>) {
     rates.insert(CURRENCIES_CODES[idx], rate);
 }
 
-/// The fixed annual interest rate percentage.
-const ANNUAL_INTEREST_RATE: f64 = 0.05;
-
-/// Calculates and prints the daily increase to an account's balance from interest.
-///
-/// The user is prompted to input the number of days to calculate for.
-fn calculate_interest(account: &Account) {
-    let mut balance = account.balance;
-
-    println!("Current Balance: {balance}");
-    println!("Currency: {}", account.currency);
-    println!("Interest Rate: {}%", (ANNUAL_INTEREST_RATE * 100.0) as i32);
-
-    println!();
-
-    if let Ok(day_cnt) = prompt("Total Number of Days: ").parse::<u32>() {
-        println!();
-
-        println!("Day | Interest | Balance |");
-
-        let daily_interest = (balance * (ANNUAL_INTEREST_RATE / 365.0) * 100.0).round() / 100.0;
-
-        for i in 1..=day_cnt {
-            balance += daily_interest;
-
-            println!(
-                "{day:<3} | {interest:<8} | {balance:<7.2} |",
-                day = i,
-                interest = daily_interest,
-                balance = balance
-            );
-        }
-    } else {
-        println!("Number must be a positive whole number (integer)!");
-    }
-}
-
 fn main() {
     let mut accounts = Vec::new();
     let mut exchange_rates = HashMap::<&str, f64>::new();
@@ -333,9 +333,9 @@ fn main() {
             2 | 3 => {
                 if let Some(account) = accounts.iter_mut().find(|a| a.name == prompt("Account Name: ")) {
                     if chosen_idx == 2 {
-                        deposit_balance(account, &exchange_rates);
+                        account.deposit_balance(&exchange_rates);
                     } else {
-                        withdraw_balance(account, &exchange_rates);
+                        account.withdraw_balance(&exchange_rates);
                     }
                 } else {
                     println!("No account with this name exists!");
@@ -369,7 +369,7 @@ fn main() {
             }
             6 => {
                 if let Some(account) = accounts.iter().find(|a| a.name == prompt("Account Name: ")) {
-                    calculate_interest(account);
+                    account.calculate_interest();
                 } else {
                     println!("No account with this name exists!");
                 }
