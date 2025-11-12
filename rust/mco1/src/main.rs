@@ -166,7 +166,7 @@ impl Account {
     ///
     /// The user is prompted to input the number of days to calculate for.
     fn calculate_interest(&self) {
-        let mut balance = self.balance;
+        let &Account { mut balance, .. } = self;
 
         println!("Current Balance: {balance}");
         println!("Currency: {}", self.currency);
