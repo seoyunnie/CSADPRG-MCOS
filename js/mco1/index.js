@@ -8,17 +8,16 @@ import process from "node:process";
 import * as readline from "node:readline/promises";
 
 /**
- * Prints an array's contents as CLI prompt choices.
+ * Prints an array as an ordered list to the console.
  *
- * The array's elements are stringified and printed along with their index incremented by one (`i + 1`), serving as the
- * choice's identifier.
+ * The array's elements are stringified and printed along with their index incremented by one (`i + 1`).
  *
- * @template {{ toString(): string }} T The type of the choices to print. It must be convertible to a string type.
- * @param {readonly T[]} choices The choices to print.
+ * @template {{ toString(): string }} T The type of the elements to print. It must be convertible to a string type.
+ * @param {readonly T[]} arr The array to print.
  */
-function printChoices(choices) {
-  for (const [i, val] of choices.entries()) {
-    console.log(`[${i + 1}] ${val.toString()}`);
+function printOrderedList(arr) {
+  for (const [i, elm] of arr.entries()) {
+    console.log(`[${i + 1}] ${elm.toString()}`);
   }
 }
 
@@ -238,7 +237,7 @@ class Account {
  */
 async function exchangeCurrencies(rates) {
   console.log("Source Currency Options:");
-  printChoices(CURRENCY_TITLES);
+  printOrderedList(CURRENCY_TITLES);
 
   console.log();
 
@@ -278,7 +277,7 @@ async function exchangeCurrencies(rates) {
   console.log();
 
   console.log("Exchanged Currency Options:");
-  printChoices(CURRENCY_TITLES);
+  printOrderedList(CURRENCY_TITLES);
 
   console.log();
 
@@ -317,7 +316,7 @@ async function exchangeCurrencies(rates) {
  * @param {Map<string, number>} rates The current currency exchange rates.
  */
 async function setExchangeRates(rates) {
-  printChoices(CURRENCY_TITLES.slice(1));
+  printOrderedList(CURRENCY_TITLES.slice(1));
 
   console.log();
 
@@ -362,7 +361,7 @@ void (async function main() {
 
   mainMenu: while (true) {
     console.log("Select Transaction:");
-    printChoices(TRANSACTION_TITLES);
+    printOrderedList(TRANSACTION_TITLES);
 
     console.log();
 

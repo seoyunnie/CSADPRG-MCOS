@@ -4,52 +4,172 @@
  * Paradigm(s): Procedural, Object-Oriented, Functional
  */
 
-use std::{
-    collections::HashMap,
-    fmt,
-    io::{self, Write},
-};
+mod io_util {
+    use std::{
+        fmt,
+        io::{self, Write},
+    };
 
-/// Prints an array's contents as CLI prompt choices.
-///
-/// The array's elements are stringified and printed along with their index incremented by one (`i + 1`), serving as the
-/// choice's identifier.
-fn print_choices<T: fmt::Display>(choices: &[T]) {
-    for (i, val) in choices.iter().enumerate() {
-        println!("[{}] {val}", i + 1)
+    /// Prints an ordered list to the console.
+    ///
+    /// The list's elements are stringified and printed along with their index incremented by one (`i + 1`).
+    pub fn print_ordered_list<T: fmt::Display>(list: &[T]) {
+        for (i, elm) in list.iter().enumerate() {
+            println!("[{}] {elm}", i + 1)
+        }
+    }
+
+    /// Prompts a CLI user to input a response.
+    ///
+    /// A message is printed before awaiting the user's response, which is inputted on the same line in the console.
+    pub fn prompt(msg: &str) -> String {
+        print!("{msg}");
+
+        io::stdout().flush().expect("Failed to flush the output string...");
+
+        let mut input = String::new();
+
+        io::stdin()
+            .read_line(&mut input)
+            .expect("Failed to read the input string...");
+
+        input.trim().to_string()
     }
 }
 
-/// Prompts a CLI user to input a response.
-///
-/// A message is printed before awaiting the user's response, which is inputted on the same line in the console.
-fn prompt(msg: &str) -> String {
-    print!("{msg}");
+mod currency {
+    use crate::io_util::{print_ordered_list, prompt};
+    use std::collections::HashMap;
 
-    io::stdout().flush().expect("Failed to flush the output string...");
+    /// The number of exchangeable currencies.
+    pub const CURRENCY_COUNT: usize = 6;
+    /// The titles or labels of the exchangeable currencies.
+    pub const CURRENCIES_TITLES: [&str; CURRENCY_COUNT] = [
+        "Philippine Peso (PHP)",
+        "United States Dollar (USD)",
+        "Japanese Yen (JPY)",
+        "British Pound Sterling (GBP)",
+        "Euro (EUR)",
+        "Chinese Yuan Renminni (CNY)",
+    ];
+    /// The [ISO 4217](https://en.wikipedia.org/wiki/ISO_4217) codes of the exchangeable currencies.
+    pub const CURRENCIES_CODES: [&str; CURRENCY_COUNT] = ["PHP", "USD", "JPY", "GBP", "EUR", "CNY"];
 
-    let mut input = String::new();
+    /// Converts an amount from one currency to another.
+    pub fn convert(amount: f64, src: &&str, dest: &&str, rates: &HashMap<&str, f64>) -> f64 {
+        let src_php_amount = if *src == "PHP" { amount } else { amount * rates[src] };
 
-    io::stdin()
-        .read_line(&mut input)
-        .expect("Failed to read the input string...");
+        if *dest == "PHP" {
+            src_php_amount
+        } else {
+            src_php_amount * rates[dest]
+        }
+    }
 
-    input.trim().to_string()
+    /// Calculates and prints how much one currency is worth in another.
+    ///
+    /// The user is prompted to input the amount and what currencies to exchange.
+    pub fn exchange(rates: &HashMap<&str, f64>) {
+        println!("Source Currency Options:");
+        print_ordered_list(&CURRENCIES_TITLES);
+
+        println!();
+
+        let src_idx = match prompt("Source Currency: ").parse::<usize>() {
+            Ok(idx) => idx - 1,
+            Err(_) => {
+                println!("ID must be a positive whole number (integer)!");
+
+                return;
+            }
+        };
+
+        if src_idx >= CURRENCY_COUNT {
+            println!("No currency with this ID exists!");
+
+            return;
+        }
+
+        let src_amount = match prompt("Source Amount: ").parse::<f64>() {
+            Ok(amount) => amount,
+            Err(_) => {
+                println!("Amount must be a floating point number!");
+
+                return;
+            }
+        };
+
+        println!();
+
+        println!("Exchanged Currency Options:");
+        print_ordered_list(&CURRENCIES_TITLES);
+
+        println!();
+
+        let exchange_idx = match prompt("Exchange Currency: ").parse::<usize>() {
+            Ok(idx) => idx - 1,
+            Err(_) => {
+                println!("ID must be a positive whole number (integer)!");
+
+                return;
+            }
+        };
+
+        if exchange_idx >= CURRENCY_COUNT {
+            println!("No currency with this ID exists!");
+
+            return;
+        }
+
+        println!(
+            "Exchange Amount: {}",
+            convert(
+                src_amount,
+                &CURRENCIES_CODES[src_idx],
+                &CURRENCIES_CODES[exchange_idx],
+                rates
+            )
+        );
+    }
+
+    /// Updates the exchange rate between a currency and Philippine Pesos.
+    ///
+    /// The user is prompted to input the currency and its value in PHP.
+    pub fn set_rate(rates: &mut HashMap<&str, f64>) {
+        print_ordered_list(&CURRENCIES_TITLES[1..]);
+
+        println!();
+
+        let idx = match prompt("Select Foreign Currency: ").parse::<usize>() {
+            Ok(idx) => idx,
+            Err(_) => {
+                println!("ID must be a positive whole number (integer)!");
+
+                return;
+            }
+        };
+
+        if idx >= CURRENCY_COUNT {
+            println!("No currency with this ID exists!");
+
+            return;
+        }
+
+        let rate = match prompt("Exchange Rate: ").parse::<f64>() {
+            Ok(rate) => rate,
+            Err(_) => {
+                println!("Amount must be a floating point number!");
+
+                return;
+            }
+        };
+
+        rates.insert(CURRENCIES_CODES[idx], rate);
+    }
 }
 
-/// The number of exchangeable currencies.
-const CURRENCY_CNT: usize = 6;
-/// The titles or labels of the exchangeable currencies.
-const CURRENCIES_TITLES: [&str; CURRENCY_CNT] = [
-    "Philippine Peso (PHP)",
-    "United States Dollar (USD)",
-    "Japanese Yen (JPY)",
-    "British Pound Sterling (GBP)",
-    "Euro (EUR)",
-    "Chinese Yuan Renminni (CNY)",
-];
-/// The [ISO 4217](https://en.wikipedia.org/wiki/ISO_4217) codes of the exchangeable currencies.
-const CURRENCIES_CODES: [&str; CURRENCY_CNT] = ["PHP", "USD", "JPY", "GBP", "EUR", "CNY"];
+use io_util::{print_ordered_list, prompt};
+use std::collections::HashMap;
 
 /// The titles of the available transactional procedures.
 const TRANSACTION_TITLES: [&str; 6] = [
@@ -63,17 +183,6 @@ const TRANSACTION_TITLES: [&str; 6] = [
 
 /// The fixed annual interest rate percentage.
 const ANNUAL_INTEREST_RATE: f64 = 0.05;
-
-/// Converts an amount from one currency to another.
-fn convert_currency(amount: f64, src: &&str, dest: &&str, rates: &HashMap<&str, f64>) -> f64 {
-    let src_php_amount = if *src == "PHP" { amount } else { amount * rates[src] };
-
-    if *dest == "PHP" {
-        src_php_amount
-    } else {
-        src_php_amount * rates[dest]
-    }
-}
 
 /// A simple user bank account.
 #[derive(PartialEq)]
@@ -103,7 +212,7 @@ impl Account {
 
         let currency = prompt("Currency: ").to_uppercase();
 
-        if !CURRENCIES_CODES.iter().any(|c| *c == currency) {
+        if !currency::CURRENCIES_CODES.iter().any(|c| *c == currency) {
             println!("No currency with this code exists!");
 
             return;
@@ -115,7 +224,7 @@ impl Account {
             self.balance += if currency == "PHP" {
                 amount
             } else {
-                convert_currency(amount, &currency.as_str(), &"PHP", rates)
+                currency::convert(amount, &currency.as_str(), &"PHP", rates)
             };
 
             println!("Updated Balance: {}", self.balance);
@@ -133,7 +242,7 @@ impl Account {
 
         let currency = prompt("Currency: ").to_uppercase();
 
-        if !CURRENCIES_CODES.iter().any(|c| *c == currency) {
+        if !currency::CURRENCIES_CODES.iter().any(|c| *c == currency) {
             println!("No currency with this code exists!");
 
             return;
@@ -145,7 +254,7 @@ impl Account {
             amount = if currency == "PHP" {
                 amount
             } else {
-                convert_currency(amount, &currency.as_str(), &"PHP", rates)
+                currency::convert(amount, &currency.as_str(), &"PHP", rates)
             };
 
             if self.balance - amount < 0.0 {
@@ -197,118 +306,17 @@ impl Account {
     }
 }
 
-/// Calculates and prints how much one currency is worth in another.
-///
-/// The user is prompted to input the amount and what currencies to exchange.
-fn exchange_currencies(rates: &HashMap<&str, f64>) {
-    println!("Source Currency Options:");
-    print_choices(&CURRENCIES_TITLES);
-
-    println!();
-
-    let src_idx = match prompt("Source Currency: ").parse::<usize>() {
-        Ok(idx) => idx - 1,
-        Err(_) => {
-            println!("ID must be a positive whole number (integer)!");
-
-            return;
-        }
-    };
-
-    if src_idx >= CURRENCY_CNT {
-        println!("No currency with this ID exists!");
-
-        return;
-    }
-
-    let src_amount = match prompt("Source Amount: ").parse::<f64>() {
-        Ok(amount) => amount,
-        Err(_) => {
-            println!("Amount must be a floating point number!");
-
-            return;
-        }
-    };
-
-    println!();
-
-    println!("Exchanged Currency Options:");
-    print_choices(&CURRENCIES_TITLES);
-
-    println!();
-
-    let exchange_idx = match prompt("Exchange Currency: ").parse::<usize>() {
-        Ok(idx) => idx - 1,
-        Err(_) => {
-            println!("ID must be a positive whole number (integer)!");
-
-            return;
-        }
-    };
-
-    if exchange_idx >= CURRENCY_CNT {
-        println!("No currency with this ID exists!");
-
-        return;
-    }
-
-    println!(
-        "Exchange Amount: {}",
-        convert_currency(
-            src_amount,
-            &CURRENCIES_CODES[src_idx],
-            &CURRENCIES_CODES[exchange_idx],
-            rates
-        )
-    );
-}
-
-/// Updates the exchange rate between a currency and Philippine Pesos.
-///
-/// The user is prompted to input the currency and its value in PHP.
-fn set_exchange_rate(rates: &mut HashMap<&str, f64>) {
-    print_choices(&CURRENCIES_TITLES[1..]);
-
-    println!();
-
-    let idx = match prompt("Select Foreign Currency: ").parse::<usize>() {
-        Ok(idx) => idx,
-        Err(_) => {
-            println!("ID must be a positive whole number (integer)!");
-
-            return;
-        }
-    };
-
-    if idx >= CURRENCY_CNT {
-        println!("No currency with this ID exists!");
-
-        return;
-    }
-
-    let rate = match prompt("Exchange Rate: ").parse::<f64>() {
-        Ok(rate) => rate,
-        Err(_) => {
-            println!("Amount must be a floating point number!");
-
-            return;
-        }
-    };
-
-    rates.insert(CURRENCIES_CODES[idx], rate);
-}
-
 fn main() {
     let mut accounts = Vec::new();
     let mut exchange_rates = HashMap::<&str, f64>::new();
 
-    for code in CURRENCIES_CODES.iter().skip(1) {
+    for code in currency::CURRENCIES_CODES.iter().skip(1) {
         exchange_rates.insert(code, 1.0);
     }
 
     'main_menu: loop {
         println!("Select Transaction:");
-        print_choices(&TRANSACTION_TITLES);
+        print_ordered_list(&TRANSACTION_TITLES);
 
         println!();
 
@@ -342,7 +350,7 @@ fn main() {
                 }
             }
             4 => 'currency_exchange: loop {
-                exchange_currencies(&exchange_rates);
+                currency::exchange(&exchange_rates);
 
                 println!();
 
@@ -365,7 +373,7 @@ fn main() {
             5 => {
                 println!();
 
-                set_exchange_rate(&mut exchange_rates);
+                currency::set_rate(&mut exchange_rates);
             }
             6 => {
                 if let Some(account) = accounts.iter().find(|a| a.name == prompt("Account Name: ")) {
