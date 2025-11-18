@@ -21,11 +21,7 @@
     "typecheck": "tsc -p ./jsconfig.json --noEmit"
   },
   "devDependencies": {
-    "@tsconfig/node22": "^22.0.4",
-    "@tsconfig/recommended": "^1.0.13",
-    "@tsconfig/strictest": "^2.0.8",
-    "@types/node": "^24.10.1",
-    "typescript": "^5.9.3"
+    "@types/node": "^24.10.1"
   },
   "engines": {
     "node": ">=24.11"

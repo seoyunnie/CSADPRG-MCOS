@@ -8,5 +8,11 @@
 # Rust Build Output
 target/
 
+# Generated Output
+**/report1_regional_summary.csv
+**/report2_contractor_ranking.csv
+**/report3_annual_trends.csv
+**/summary.json
+
 # Miscellaneous
 **/.DS_Store

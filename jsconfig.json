@@ -1,0 +1,21 @@
+{
+  "$schema": "https://www.schemastore.org/jsconfig.json",
+
+  "extends": [
+    "@tsconfig/recommended/tsconfig.json",
+    "@tsconfig/strictest/tsconfig.json",
+    "@tsconfig/node24/tsconfig.json"
+  ],
+
+  "compilerOptions": {
+    /* Type Checking */
+    "noUncheckedIndexedAccess": false,
+
+    /* Modules */
+    "noUncheckedSideEffectImports": true,
+
+    /* JavaScript Support */
+    "checkJs": true,
+    "maxNodeModuleJsDepth": 0
+  }
+}

@@ -1,5 +1,6 @@
 # Checking-in and Checking-out
 *               text=auto
+*.csv           text eol=crlf
 *.js            text
 *.json          text
 *.lock          text

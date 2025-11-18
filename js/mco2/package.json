@@ -1,0 +1,32 @@
+{
+  "$schema": "https://www.schemastore.org/package",
+  "name": "data-analysis-pipeline",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A simple CLI banking and currency exchange app.",
+  "keywords": [
+    "javascript",
+    "school",
+    "school-project"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/CielSachen/CSADPRG-MCOS.git"
+  },
+  "license": "MIT",
+  "author": "Seoyun",
+  "type": "module",
+  "scripts": {
+    "start": "node ./index.js",
+    "typecheck": "tsc -p ./jsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "csv": "^6.4.1"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1"
+  },
+  "engines": {
+    "node": ">=24.11"
+  }
+}
