@@ -135,7 +135,7 @@ mod currency {
     /// Updates the exchange rate between a currency and Philippine Pesos.
     ///
     /// The user is prompted to input the currency and its value in PHP.
-    pub fn set_rate(rates: &mut HashMap<&str, f64>) {
+    pub fn set_exchange_rates(rates: &mut HashMap<&str, f64>) {
         print_ordered_list(&CURRENCIES_TITLES[1..]);
 
         println!();
@@ -181,9 +181,6 @@ const TRANSACTION_TITLES: [&str; 6] = [
     "Show Interest Amount",
 ];
 
-/// The fixed annual interest rate percentage.
-const ANNUAL_INTEREST_RATE: f64 = 0.05;
-
 /// A simple user bank account.
 #[derive(PartialEq)]
 struct Account {
@@ -195,6 +192,9 @@ struct Account {
     currency: String,
 }
 impl Account {
+    /// The fixed annual interest rate percentage.
+    const ANNUAL_INTEREST_RATE: f64 = 0.05;
+
     /// Creates a new account with the default values.
     fn new(name: String) -> Account {
         Account {
@@ -279,7 +279,7 @@ impl Account {
 
         println!("Current Balance: {balance}");
         println!("Currency: {}", self.currency);
-        println!("Interest Rate: {}%", (ANNUAL_INTEREST_RATE * 100.0) as i32);
+        println!("Interest Rate: {}%", (Account::ANNUAL_INTEREST_RATE * 100.0) as i32);
 
         println!();
 
@@ -288,7 +288,7 @@ impl Account {
 
             println!("Day | Interest | Balance |");
 
-            let daily_interest = (balance * (ANNUAL_INTEREST_RATE / 365.0) * 100.0).round() / 100.0;
+            let daily_interest = (balance * (Account::ANNUAL_INTEREST_RATE / 365.0) * 100.0).round() / 100.0;
 
             for i in 1..=day_cnt {
                 balance += daily_interest;
@@ -373,7 +373,7 @@ fn main() {
             5 => {
                 println!();
 
-                currency::set_rate(&mut exchange_rates);
+                currency::set_exchange_rates(&mut exchange_rates);
             }
             6 => {
                 if let Some(account) = accounts.iter().find(|a| a.name == prompt("Account Name: ")) {

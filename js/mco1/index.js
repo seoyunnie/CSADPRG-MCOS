@@ -53,21 +53,6 @@ const CURRENCY_TITLES = Object.freeze(
 /** The {@link https://en.wikipedia.org/wiki/ISO_4217 | ISO 4217} codes of the exchangeable currencies. */
 const CURRENCY_CODES = Object.freeze(CURRENCY_TITLES.map((c) => c.slice(-4, -1)));
 
-/** The titles of the available transactional procedures. */
-const TRANSACTION_TITLES = Object.freeze(
-  /** @type {const} */ ([
-    "Register Account Name",
-    "Deposit Amount",
-    "Withdraw Amount",
-    "Currency Exchange",
-    "Record Exchange Rates",
-    "Show Interest Amount",
-  ]),
-);
-
-/** The fixed annual interest rate percentage. */
-const ANNUAL_INTEREST_RATE = 0.05;
-
 /**
  * Converts an amount from one currency to another.
  *
@@ -83,149 +68,6 @@ function convertCurrency(amount, src, dest, rates) {
 
   // @ts-ignore: `dest` is guaranteed to be a key in `rates`.
   return dest === "PHP" ? srcPHPAmount : srcPHPAmount * rates.get(dest);
-}
-
-/** A simple user bank account. */
-class Account {
-  /**
-   * The name of the owner of the account.
-   * @readonly
-   * @type {string}
-   */
-  name;
-  /**
-   * The current balance of the account.
-   * @type {number}
-   */
-  balance = 0;
-  /**
-   * The currency that the account's balance is based on.
-   * @readonly
-   */
-  currency = "PHP";
-
-  /**
-   * Creates and returns a new `Account` object.
-   * @param {string} name The name of the owner of the account.
-   */
-  constructor(name) {
-    this.name = name;
-  }
-
-  /**
-   * Deposits balance to the user's account.
-   *
-   * The user is prompted to input the currency and amount of balance to deposit.
-   *
-   * @param {ReadonlyMap<string, number>} rates The current currency exchange rates.
-   */
-  async depositBalance(rates) {
-    console.log(`Current Balance: ${this.balance}`);
-
-    const currency = (await prompt("Currency: ")).toUpperCase();
-
-    if (!CURRENCY_CODES.some((c) => c === currency)) {
-      console.log("No currency with this code exists!");
-
-      return;
-    }
-
-    console.log();
-
-    try {
-      const amount = Number.parseFloat(await prompt("Deposit Amount: "));
-      this.balance += currency === "PHP" ? amount : convertCurrency(amount, currency, "PHP", rates);
-
-      console.log(`Updated Balance: ${this.balance}`);
-    } catch {
-      console.log("Deposit amount must be a floating point number!");
-    }
-  }
-
-  /**
-   * Withdraws balance from the user's account.
-   *
-   * The user is prompted to input the currency and amount of balance to withdraw. If the amount is greater than the
-   * account's current balance, the transaction is cancelled.
-   *
-   * @param {ReadonlyMap<string, number>} rates The current currency exchange rates.
-   */
-  async withdrawBalance(rates) {
-    console.log(`Current Balance: ${this.balance}`);
-
-    const currency = (await prompt("Currency: ")).toUpperCase();
-
-    if (!CURRENCY_CODES.some((c) => c === currency)) {
-      console.log("No currency with this code exists!");
-
-      return;
-    }
-
-    console.log();
-
-    try {
-      let amount = Number.parseFloat(await prompt("Withdraw Amount: "));
-      amount = currency === "PHP" ? amount : convertCurrency(amount, currency, "PHP", rates);
-
-      if (this.balance - amount < 0) {
-        console.log("Withdraw amount must be less than the current balance!");
-
-        return;
-      }
-
-      this.balance -= amount;
-
-      console.log(`Updated Balance: ${this.balance}`);
-    } catch {
-      console.log("Withdraw amount must be a floating point number!");
-    }
-  }
-
-  /**
-   * Calculates and prints the daily increase to the account's balance from interest.
-   *
-   * The user is prompted to input the number of days to calculate for.
-   *
-   */
-  async calculateInterest() {
-    let { balance } = this;
-
-    console.log(`Current Balance: ${balance}`);
-    console.log(`Currency: ${this.currency}`);
-    console.log(`Interest Rate: ${ANNUAL_INTEREST_RATE * 100}`);
-
-    console.log();
-
-    /** @type {number} */
-    let dayCnt;
-
-    try {
-      dayCnt = Number.parseInt(await prompt("Total Number of Days: "));
-
-      if (dayCnt < 0) {
-        // Trigger the error handling (`catch` block).
-        throw new TypeError();
-      }
-    } catch {
-      console.log("Number must be a positive whole number (integer)!");
-
-      return;
-    }
-
-    console.log();
-
-    console.log("Day | Interest | Balance |");
-
-    const dailyInterest = Math.round(balance * (ANNUAL_INTEREST_RATE / 365) * 100) / 100;
-
-    for (let i = 1; i <= dayCnt; i++) {
-      balance += dailyInterest;
-
-      console.log(
-        `${String(i).padEnd(3)} | ${String(dailyInterest).padEnd(8)} | ${String(balance.toFixed(2)).padEnd(7)} |`,
-      );
-    }
-  }
 }
 
 /**
@@ -346,6 +188,167 @@ async function setExchangeRates(rates) {
     rates.set(CURRENCY_TITLES[idx], Number.parseFloat(await prompt("Exchange Rate: ")));
   } catch {
     console.log("Amount must be a floating point number!");
+  }
+}
+
+/** The titles of the available transactional procedures. */
+const TRANSACTION_TITLES = Object.freeze(
+  /** @type {const} */ ([
+    "Register Account Name",
+    "Deposit Amount",
+    "Withdraw Amount",
+    "Currency Exchange",
+    "Record Exchange Rates",
+    "Show Interest Amount",
+  ]),
+);
+
+/** A simple user bank account. */
+class Account {
+  /**
+   * The fixed annual interest rate percentage.
+   * @readonly
+   */
+  static ANNUAL_INTEREST_RATE = 0.05;
+
+  /**
+   * The name of the owner of the account.
+   * @readonly
+   * @type {string}
+   */
+  name;
+  /**
+   * The current balance of the account.
+   * @type {number}
+   */
+  balance = 0;
+  /**
+   * The currency that the account's balance is based on.
+   * @readonly
+   */
+  currency = "PHP";
+
+  /**
+   * Creates and returns a new `Account` object.
+   * @param {string} name The name of the owner of the account.
+   */
+  constructor(name) {
+    this.name = name;
+  }
+
+  /**
+   * Deposits balance to the user's account.
+   *
+   * The user is prompted to input the currency and amount of balance to deposit.
+   *
+   * @param {ReadonlyMap<string, number>} rates The current currency exchange rates.
+   */
+  async depositBalance(rates) {
+    console.log(`Current Balance: ${this.balance}`);
+
+    const currency = (await prompt("Currency: ")).toUpperCase();
+
+    if (!CURRENCY_CODES.some((c) => c === currency)) {
+      console.log("No currency with this code exists!");
+
+      return;
+    }
+
+    console.log();
+
+    try {
+      const amount = Number.parseFloat(await prompt("Deposit Amount: "));
+      this.balance += currency === "PHP" ? amount : convertCurrency(amount, currency, "PHP", rates);
+
+      console.log(`Updated Balance: ${this.balance}`);
+    } catch {
+      console.log("Deposit amount must be a floating point number!");
+    }
+  }
+
+  /**
+   * Withdraws balance from the user's account.
+   *
+   * The user is prompted to input the currency and amount of balance to withdraw. If the amount is greater than the
+   * account's current balance, the transaction is cancelled.
+   *
+   * @param {ReadonlyMap<string, number>} rates The current currency exchange rates.
+   */
+  async withdrawBalance(rates) {
+    console.log(`Current Balance: ${this.balance}`);
+
+    const currency = (await prompt("Currency: ")).toUpperCase();
+
+    if (!CURRENCY_CODES.some((c) => c === currency)) {
+      console.log("No currency with this code exists!");
+
+      return;
+    }
+
+    console.log();
+
+    try {
+      let amount = Number.parseFloat(await prompt("Withdraw Amount: "));
+      amount = currency === "PHP" ? amount : convertCurrency(amount, currency, "PHP", rates);
+
+      if (this.balance - amount < 0) {
+        console.log("Withdraw amount must be less than the current balance!");
+
+        return;
+      }
+
+      this.balance -= amount;
+
+      console.log(`Updated Balance: ${this.balance}`);
+    } catch {
+      console.log("Withdraw amount must be a floating point number!");
+    }
+  }
+
+  /**
+   * Calculates and prints the daily increase to the account's balance from interest.
+   *
+   * The user is prompted to input the number of days to calculate for.
+   *
+   */
+  async calculateInterest() {
+    let { balance } = this;
+
+    console.log(`Current Balance: ${balance}`);
+    console.log(`Currency: ${this.currency}`);
+    console.log(`Interest Rate: ${Account.ANNUAL_INTEREST_RATE * 100}`);
+
+    console.log();
+
+    /** @type {number} */
+    let dayCnt;
+
+    try {
+      dayCnt = Number.parseInt(await prompt("Total Number of Days: "));
+
+      if (dayCnt < 0) {
+        // Trigger the error handling (`catch` block).
+        throw new TypeError();
+      }
+    } catch {
+      console.log("Number must be a positive whole number (integer)!");
+
+      return;
+    }
+
+    console.log();
+
+    console.log("Day | Interest | Balance |");
+
+    const dailyInterest = Math.round(balance * (Account.ANNUAL_INTEREST_RATE / 365) * 100) / 100;
+
+    for (let i = 1; i <= dayCnt; i++) {
+      balance += dailyInterest;
+
+      console.log(
+        `${String(i).padEnd(3)} | ${String(dailyInterest).padEnd(8)} | ${String(balance.toFixed(2)).padEnd(7)} |`,
+      );
+    }
   }
 }
 
