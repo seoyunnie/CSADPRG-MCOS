@@ -335,7 +335,7 @@ mod report {
             total_projects: projects.len(),
             total_contractors: projects
                 .iter()
-                .map(|p| &p.contract_id)
+                .map(|p| &p.contractor)
                 .collect::<HashSet<&String>>()
                 .len(),
             global_avg_delay: avg_delay,

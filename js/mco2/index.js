@@ -359,7 +359,7 @@ async function createSummary(projects) {
   /** @type {Summary} */
   const summary = {
     TotalProjects: projects.length,
-    TotalContractors: new Set(projects.filter((p) => p.contractId)).size,
+    TotalContractors: new Set(projects.map((p) => p.contractor)).size,
     GlobalAvgDelay: avgDelay,
     TotalSavings: projects
       .values()
